@@ -1,0 +1,5 @@
+pymodbus
+streamlit==0.62.1
+pandas
+sqlalchemy
+xlrd
