@@ -5,6 +5,13 @@ from cycle import *
 # from streamlit.ReportThread import add_report_ctx
 import pandas as pd
 from PIL import Image
+from streamlit.ReportThread import add_report_ctx
+import SessionState
+
+import cv2
+import os
+import signal
+import threading
 
 def create_node(node):
     # Instantiate node
@@ -31,17 +38,30 @@ def create_node(node):
     rq = node.client.write_registers(start_register, [0]*block_length, unit=node.unit)
     return node, map
 
+node, map = create_node(node)
+node.init_page()
+
 if __name__=="__main__":
-    node, map = create_node(node)
-    # Start the page
-    node.init_page()
-    st.write(node.engine)
-    st.write(pd.DataFrame(map.items()))
+    ss = SessionState.get(image_counter=0)
+    # Setup camera feed
+    cam = cv2.VideoCapture(0)
 
-    image = Image.open('tank.png')
-    st.image(image, caption='Last identified model: '+'CT100', use_column_width=True)
+    # image_counter = 0
+    feed = st.empty()
+    # save_button = st.button("Save frame")
+    # cam.release()
 
-    # Thread-1: heartbeat
-    # Thread-2: cycle (model_identification)
-    # Thread-3: database writing (optional)
-    # Thread-4: streamlit show (can stream images?)
+    while True:
+        ret, frame = cam.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        feed.image(frame, caption = 'Live feed from camera', use_column_width=True)
+        cam.release()
+
+        # if save_button:
+        #     img_name = "./data/CT100/st_image_{}.png".format(ss.img_counter)
+        #     cv2.imwrite(img_name, frame)
+        #     st.write("{} written".format(img_name))
+        #     ss.image_counter = ss.image_counter + 1
+        #     cam.release()
+    
+    cam.release()
