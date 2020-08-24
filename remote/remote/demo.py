@@ -47,7 +47,7 @@ print('classes loaded...')
 font                   = cv2.FONT_HERSHEY_SIMPLEX
 bottomLeftCornerOfText = (200,450)
 fontScale              = 2
-fontColor              = (0,0,0)
+fontColor              = (0,165,255)
 lineType               = 10
 print('settings loaded...')
 
@@ -82,7 +82,9 @@ def get_prediction(tensor):
     predicted_idx = str(y_hat.item())
     prob = sm(outputs)
     print(prob)
-    return class_index[predicted_idx]
+    # if torch.max() > 50:
+    #     print(yo)
+    return class_index[predicted_idx], torch.max(prob).detach().numpy()
 
 # def check_presence(frame):
 #
@@ -99,22 +101,28 @@ while True:
 
     tensor = transform_image(frame)
     # print("obtaining prediction...")
-    pred = get_prediction(tensor)
-    # print(pred)
-    # comp_present = check_presence(frame)
+    pred, prob = get_prediction(tensor)
 
-    # if comp_present == 1:
-    #     pred = pred
-    # elif comp_present == 0:
-    #     pred = "No tank"
-        # pred = " "
-
-    cv2.putText(frame,pred,
-        bottomLeftCornerOfText,
-        font,
-        fontScale,
-        fontColor,
-        lineType)
+    if prob > 0.55:
+        # cv2.putText(frame,pred+':{}'.format(prob)+'%',
+        #     bottomLeftCornerOfText,
+        #     font,
+        #     fontScale,
+        #     fontColor,
+        #     lineType)
+        cv2.putText(frame,pred,
+            bottomLeftCornerOfText,
+            font,
+            fontScale,
+            fontColor,
+            lineType)
+    else:
+        cv2.putText(frame,"Please wait",
+            bottomLeftCornerOfText,
+            font,
+            fontScale,
+            fontColor,
+            lineType)
 
     cv2.imshow('Display', frame)
     frames = frames + 1
