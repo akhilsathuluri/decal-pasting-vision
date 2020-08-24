@@ -13,9 +13,9 @@ import cv2
 print('initialising model...')
 model = models.resnet18(pretrained=True)
 num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, 5)
+model.fc = nn.Linear(num_ftrs, 4)
 
-model.load_state_dict(torch.load("tank_ident.pth"))
+model.load_state_dict(torch.load("trained/new/tank_model_ident_res18_fe.pth"))
 model.eval()
 print('model initialised...')
 
@@ -29,19 +29,19 @@ fontColor              = (0,0,0)
 lineType               = 10
 print('settings loaded...')
 
-template = cv2.imread('background.png')
-_, w, h = template.shape[::-1]
-method = eval('cv2.TM_CCOEFF')
-print('background template and method loaded...')
+# template = cv2.imread('background.png')
+# _, w, h = template.shape[::-1]
+# method = eval('cv2.TM_CCOEFF')
+# print('background template and method loaded...')
 
-def check_presence(frame):
-    res = cv2.matchTemplate(frame,template,method)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    if max_val < 320000000:
-        comp_present = 0
-    else:
-        comp_present = 1
-    return comp_present
+# def check_presence(frame):
+#     res = cv2.matchTemplate(frame,template,method)
+#     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+#     if max_val < 320000000:
+#         comp_present = 0
+#     else:
+#         comp_present = 1
+#     return comp_present
 
 def transform_image(img):
     my_transforms = transforms.Compose([transforms.Resize(255),
@@ -57,6 +57,7 @@ def get_prediction(tensor):
     outputs = model.forward(tensor)
     _, y_hat = outputs.max(1)
     predicted_idx = str(y_hat.item())
+    # print(predicted_idx)
     return class_index[predicted_idx]
 
 # def check_presence(frame):
@@ -75,12 +76,12 @@ while True:
     # print("obtaining prediction...")
     pred = get_prediction(tensor)
     # print(pred)
-    comp_present = check_presence(frame)
+    # comp_present = check_presence(frame)
 
-    if comp_present == 1:
-        pred = pred
-    elif comp_present == 0:
-        pred = "No tank"
+    # if comp_present == 1:
+    #     pred = pred
+    # elif comp_present == 0:
+    #     pred = "No tank"
         # pred = " "
 
     cv2.putText(frame,pred,
