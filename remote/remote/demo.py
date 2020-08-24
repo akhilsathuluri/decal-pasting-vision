@@ -1,5 +1,6 @@
 import io
 import json
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -8,16 +9,37 @@ import torchvision.transforms as transforms
 from PIL import Image
 # from flask import Flask, jsonify, request
 import cv2
+from datetime import datetime
 
-# plt.ion()
 print('initialising model...')
-model = models.resnet18(pretrained=True)
-num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, 4)
 
-model.load_state_dict(torch.load("trained/new/tank_model_ident_res18_fe.pth"))
-model.eval()
-print('model initialised...')
+model_name = 'resnet'
+
+if model_name == 'resnet':
+    model = models.resnet18(pretrained=True)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 4)
+
+    model.load_state_dict(torch.load("trained/new/tank_model_ident_res18_fe.pth"))
+    model.eval()
+    print('Resnet model initialised...')
+
+if model_name == 'squeeze':
+    model = models.squeezenet1_0(pretrained=True)
+    model.classifier[1] = nn.Conv2d(512, 4, kernel_size=(1,1), stride=(1,1))
+
+    model.load_state_dict(torch.load("trained/new/tank_model_ident_squeeze_fe.pth"))
+    model.eval()
+    print('Squeezenet model initialised...')
+
+# Not working yet
+if model_name == 'mobile':
+    model = models.mobilenet_v2(pretrained=True)
+    model.classifier[1] = nn.Linear(1280, 4)
+
+    model.load_state_dict(torch.load("trained/new/tank_models_mobile_fe.pth"))
+    model.eval()
+    print('Mobilenet_v2 model initialised...')
 
 class_index = json.load(open('classes.json'))
 print('classes loaded...')
@@ -53,11 +75,13 @@ def transform_image(img):
     image = Image.fromarray(img)
     return my_transforms(image).unsqueeze(0)
 
+sm = torch.nn.Softmax()
 def get_prediction(tensor):
     outputs = model.forward(tensor)
     _, y_hat = outputs.max(1)
     predicted_idx = str(y_hat.item())
-    # print(predicted_idx)
+    prob = sm(outputs)
+    print(prob)
     return class_index[predicted_idx]
 
 # def check_presence(frame):
@@ -68,7 +92,8 @@ cv2.namedWindow("Display")
 
 img_counter = 0
 comp_present = 0
-
+frames = 1
+a = datetime.now()
 while True:
     ret, frame = cam.read()
 
@@ -92,6 +117,7 @@ while True:
         lineType)
 
     cv2.imshow('Display', frame)
+    frames = frames + 1
 
     k = cv2.waitKey(1)
 
@@ -103,5 +129,8 @@ while True:
         cv2.imwrite(img_name, frame)
         print("{} written".format(img_name))
         img_counter += 1
+b = datetime.now()
+c = b-a
 cam.release()
 cv2.destroyAllWindows()
+print("framerate: ", np.float(frames)/np.float(c.seconds), "fps")
