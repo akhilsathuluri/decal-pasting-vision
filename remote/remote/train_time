@@ -1,3 +1,3 @@
 Resnet-18 - 9m 26s - best_val:97.58, last: 96.14, 1.66 fps
 Squeezenet - 6m 51s - best_val:100, last: 100, 1.88 fps
-mobilenet_v2 - 9m 3s - best_val:99.03, last: 95.65, 
+mobilenet_v2 - 9m 3s - best_val:99.03, last: 95.65, 1.5 fps

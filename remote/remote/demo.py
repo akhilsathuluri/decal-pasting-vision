@@ -47,23 +47,25 @@ print('classes loaded...')
 font                   = cv2.FONT_HERSHEY_SIMPLEX
 bottomLeftCornerOfText = (200,450)
 fontScale              = 2
-fontColor              = (0,165,255)
+fontColor              = (255,0,0)
 lineType               = 10
 print('settings loaded...')
 
-# template = cv2.imread('background.png')
-# _, w, h = template.shape[::-1]
-# method = eval('cv2.TM_CCOEFF')
-# print('background template and method loaded...')
+template = cv2.imread('background.png')
+_, w, h = template.shape[::-1]
+method = eval('cv2.TM_CCOEFF')
+print('background template and method loaded...')
 
-# def check_presence(frame):
-#     res = cv2.matchTemplate(frame,template,method)
-#     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-#     if max_val < 320000000:
-#         comp_present = 0
-#     else:
-#         comp_present = 1
-#     return comp_present
+# Component precense
+def check_presence(frame):
+    res = cv2.matchTemplate(frame,template,method)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    print(max_val)
+    if max_val > 11454307000:
+        comp_present = 0
+    else:
+        comp_present = 1
+    return comp_present
 
 def transform_image(img):
     my_transforms = transforms.Compose([transforms.Resize(255),
@@ -86,9 +88,6 @@ def get_prediction(tensor):
     #     print(yo)
     return class_index[predicted_idx], torch.max(prob).detach().numpy()
 
-# def check_presence(frame):
-#
-
 cam = cv2.VideoCapture(0)
 cv2.namedWindow("Display")
 
@@ -98,31 +97,38 @@ frames = 1
 a = datetime.now()
 while True:
     ret, frame = cam.read()
-
     tensor = transform_image(frame)
     # print("obtaining prediction...")
     pred, prob = get_prediction(tensor)
-
-    if prob > 0.55:
-        # cv2.putText(frame,pred+':{}'.format(prob)+'%',
-        #     bottomLeftCornerOfText,
-        #     font,
-        #     fontScale,
-        #     fontColor,
-        #     lineType)
-        cv2.putText(frame,pred,
-            bottomLeftCornerOfText,
-            font,
-            fontScale,
-            fontColor,
-            lineType)
-    else:
-        cv2.putText(frame,"Please wait",
-            bottomLeftCornerOfText,
-            font,
-            fontScale,
-            fontColor,
-            lineType)
+    status = check_presence(frame)
+    if status==1:
+        if prob > 0.45:
+            # cv2.putText(frame,pred+':{}'.format(prob)+'%',
+            #     bottomLeftCornerOfText,
+            #     font,
+            #     fontScale,
+            #     fontColor,
+            #     lineType)
+            cv2.putText(frame,pred,
+                bottomLeftCornerOfText,
+                font,
+                fontScale,
+                fontColor,
+                lineType)
+        else:
+            cv2.putText(frame,"Please wait",
+                bottomLeftCornerOfText,
+                font,
+                fontScale,
+                fontColor,
+                lineType)
+    if status==0:
+        cv2.putText(frame,"Waiting for tank",
+                bottomLeftCornerOfText,
+                font,
+                fontScale,
+                fontColor,
+                lineType)
 
     cv2.imshow('Display', frame)
     frames = frames + 1
@@ -137,6 +143,7 @@ while True:
         cv2.imwrite(img_name, frame)
         print("{} written".format(img_name))
         img_counter += 1
+
 b = datetime.now()
 c = b-a
 cam.release()
