@@ -20,7 +20,7 @@ if model_name == 'resnet':
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 4)
 
-    model.load_state_dict(torch.load("trained/new/tank_model_ident_res18_fe.pth"))
+    model.load_state_dict(torch.load("trained/new/tank_models_hole.pth"))
     model.eval()
     print('Resnet model initialised...')
 
