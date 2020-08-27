@@ -62,7 +62,7 @@ nok_color = (0,0,255)
 wait_color = (255,0,0)
 start_point = (5,5)
 end_point = (220,220)
-x_crop = 360
+x_crop = 460
 y_crop = 200
 window = 300
 print('settings loaded...')
