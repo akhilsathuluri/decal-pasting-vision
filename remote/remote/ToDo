@@ -1,5 +1,5 @@
 1. Add auto teaching function for wrong images
 2. Add predicting form multiple frames and then signal PLC
-3. Change text color to something visible on both dark and light surfaces
+3. Match template for the hole first and only then start the prediction
 
 Since the forward machine is precise, the expected component should also be precise and so use the expectation to identify the component.
