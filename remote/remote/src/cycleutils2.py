@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime
 # from node import node
+from model_identification import check_model
 
 # Need to cache both the functions
 
@@ -28,56 +29,31 @@ def health(node, map):
             pass
 
 # @st.cache(hash_funcs={node.Node: True})
-def cycle(node, map):
+def cycle(node, map, cam):
     while True:
-        print('cycle')
         loop_number = 1
         rq = node.client.write_registers(map['reg_pi_last_loop'], loop_number, unit=node.unit)
 
         trigger1 = node.client.read_holding_registers(map['reg_plc_trigger1'], 1, unit=node.unit)
-        trigger2 = node.client.read_holding_registers(map['reg_plc_trigger2'], 1, unit=node.unit)
 
         # Trigger 1 only after component seat check is verified (handled by PLC)
         # Start cycle
         if trigger1.registers[0] == 1:
             loop_number = 2
             rq = node.client.write_registers(map['reg_pi_last_loop'], loop_number, unit=node.unit)
-            # Read PLC model register
-            plc_model = node.client.read_holding_registers(map['reg_plc_model'], 1, unit=node.unit)
             # Check models
-            ret, identified_model = check_model(plc_model.registers[0])
+            ret, pred, frame = check_model(cam)
             # Handle not being able to write register
-            if ret == True:
+            if pred != 'None':
                 # Write model verify register
-                rq = node.client.write_registers(map['reg_pi_model_ok'], 1, unit=node.unit)
-                # Write model number register
-                reg_name = 'reg_pi_model_'+str(identified_model)
-                rq = node.client.write_registers(map[reg_name], 1, unit=node.unit)
-            elif ret == False:
-                rq = node.client.write_registers(map['reg_pi_model_nok'], 1, unit=node.unit)
-                reg_name = 'reg_pi_model_'+str(identified_model)
-                rq = node.client.write_registers(map[reg_name], 1, unit=node.unit)
-            elif ret == 'ERROR':
+                rq = node.client.write_registers(map['reg_pi_{}'.format(pred)], 1, unit=node.unit)
+            elif pred == 'None':
+                pass
+            elif pred == 'ERROR':
                 # To handle camera prediction errors
                 rq = node.client.write_registers(map['reg_pi_error'], 1, unit=node.unit)
             else:
                 # To handle unknown read/write or pi errors
-                rq = node.client.write_registers(map['reg_pi_unknown_error'], 1, unit=node.unit)
-
-        # Trigger 2 only after component seat check is verified (handled by PLC)
-        if trigger2.registers[0] == 1:
-            loop_number = 3
-            rq = node.client.write_registers(map['reg_pi_last_loop'], loop_number, unit=node.unit)
-            # Check orientation of the rim
-            ret = check_orientation()
-            # Handle not being able to write register
-            if ret == True:
-                rq = node.client.write_registers(map['reg_pi_ori_ok'], 1, unit=node.unit)
-            elif ret == False:
-                rq = node.client.write_registers(map['reg_pi_ori_nok'], 1, unit=node.unit)
-            elif ret == 'ERROR':
-                rq = node.client.write_registers(map['reg_pi_error'], 1, unit=node.unit)
-            else:
                 rq = node.client.write_registers(map['reg_pi_unknown_error'], 1, unit=node.unit)
 
 def write_to_db(node, map, engine):

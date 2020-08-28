@@ -7,11 +7,14 @@ import pandas as pd
 from PIL import Image
 from streamlit.ReportThread import add_report_ctx
 import SessionState
+from model_identification import check_model
 
 import cv2
+import time
 import os
 import signal
 import threading
+import multiprocessing as mp
 
 def create_node(node):
     # Instantiate node
@@ -29,39 +32,63 @@ def create_node(node):
     node.init_db(node.node_number)
 
     # Load register map
-    map = node.load_register_map()
+    rmap = node.load_register_map()
     # Connect with slave
     node.connect()
     # Reset the entire memory block under pi's control
     start_register = 50
     block_length = 15
     rq = node.client.write_registers(start_register, [0]*block_length, unit=node.unit)
-    return node, map
+    return node, rmap
 
-node, map = create_node(node)
+node, rmap = create_node(node)
 node.init_page()
+recent_image = st.empty()
+
+status = st.empty()
 
 if __name__=="__main__":
-    ss = SessionState.get(image_counter=0)
-    # Setup camera feed
     cam = cv2.VideoCapture(0)
+    cv2.namedWindow('Prediction display')
 
-    # image_counter = 0
-    feed = st.empty()
-    # save_button = st.button("Save frame")
-    # cam.release()
+    p1 = mp.Process(target = health, args=(node, rmap, ))
+    # p2 = mp.Process(target = cycle, args=(node, rmap, ))
 
+    p1.start()
+
+    prev_model = 'None'
     while True:
         ret, frame = cam.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        feed.image(frame, caption = 'Live feed from camera', use_column_width=True)
-        cam.release()
+        # pred, frame = check_model(frame)
 
-        # if save_button:
-        #     img_name = "./data/CT100/st_image_{}.png".format(ss.img_counter)
-        #     cv2.imwrite(img_name, frame)
-        #     st.write("{} written".format(img_name))
-        #     ss.image_counter = ss.image_counter + 1
-        #     cam.release()
-    
+        trigger1 = node.client.read_holding_registers(rmap['reg_plc_trigger1'], 1, unit=node.unit)
+        # temp = trigger1.registers[0]
+        # if trigger1.registers[0] == 1:
+        if True:
+            pred, frame = check_model(frame)
+            if pred != 'None':
+                print(pred)
+                recent_image.image(frame, caption=pred, use_column_width=True)
+                status.write('Component present')
+                if pred != prev_model:
+                    # Write model verify register
+                    rq = node.client.write_registers(rmap['reg_pi_{}'.format(pred)], 1, unit=node.unit)
+                    prev_model = pred
+                else:
+                    status.write('Component absent')
+                    pass
+
+        cv2.imshow('Prediction display', frame)
+        print(pred)
+
+        k = cv2.waitKey(1)
+        if k%256== 27:
+            print('Escape hit. Closing...')
+            break
+
     cam.release()
+    cv2.destroyAllWindows()
+
+    # p2.start()
+    p1.join()
+    # p2.join()

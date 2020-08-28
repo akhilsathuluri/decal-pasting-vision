@@ -64,7 +64,7 @@ if __name__=="__main__":
     p = mp.Process(target=main_funcs, args=(node, map, engine, ))
     p.start()
 
-    time.sleep(1)
+    # time.sleep(1)
 
     t3 = threading.Thread(target=display, args=(node, engine,))
     add_report_ctx(t3)
