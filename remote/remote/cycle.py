@@ -6,7 +6,6 @@ import time
 # from model_identification import check_model
 
 def health(node, rmap):
-    time.sleep(1)
     while True:
         loop_number = 0
         rq = node.client.write_registers(rmap['reg_pi_last_loop'], loop_number, unit=node.unit)

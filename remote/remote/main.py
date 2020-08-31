@@ -42,10 +42,10 @@ def create_node(node):
     return node, rmap
 
 node, rmap = create_node(node)
-node.init_page()
-recent_image = st.empty()
+# node.init_page()
 
-status = st.empty()
+# recent_image = st.empty()
+# status = st.empty()
 
 if __name__=="__main__":
     cam = cv2.VideoCapture(0)
@@ -67,15 +67,16 @@ if __name__=="__main__":
         if True:
             pred, frame = check_model(frame)
             if pred != 'None':
-                print(pred)
-                recent_image.image(frame, caption=pred, use_column_width=True)
-                status.write('Component present')
+                # print(pred)
+                # recent_image.image(frame, caption=pred, use_column_width=True)
+                # status.write('Component present')
                 if pred != prev_model:
                     # Write model verify register
                     rq = node.client.write_registers(rmap['reg_pi_{}'.format(pred)], 1, unit=node.unit)
+                    cv2.imwrite('database/recent_tank.jpg', frame)
                     prev_model = pred
                 else:
-                    status.write('Component absent')
+                    # status.write('Component absent')
                     pass
 
         cv2.imshow('Prediction display', frame)
