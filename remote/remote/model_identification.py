@@ -51,7 +51,7 @@ class_index = json.load(open('classes.json'))
 print('classes loaded...')
 
 font                   = cv2.FONT_HERSHEY_SIMPLEX
-bottomLeftCornerOfText = (200,450)
+bottomLeftCornerOfText = (400,800)
 fontScale              = 2
 fontColor              = (255,0,0)
 lineType               = 10
